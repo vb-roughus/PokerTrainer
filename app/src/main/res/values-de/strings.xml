@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PokerTrainer</string>
+
+    <!-- Home -->
+    <string name="home_title">PokerTrainer</string>
+    <string name="home_subtitle">Texas Hold\'em Poker lernen</string>
+    <string name="home_learn_rules">Regeln lernen</string>
+    <string name="home_play_game">Gegen KI spielen</string>
+    <string name="home_strategy">Strategie-Trainer</string>
+    <string name="home_lang_toggle">EN</string>
+
+    <!-- Rules -->
+    <string name="rules_title">Poker-Regeln</string>
+    <string name="rules_hand_rankings">Hand-Wertungen</string>
+    <string name="rules_game_flow">Spielablauf</string>
+    <string name="rules_glossary">Glossar</string>
+
+    <!-- Hand Rankings -->
+    <string name="hand_royal_flush">Royal Flush</string>
+    <string name="hand_royal_flush_desc">A, K, Q, J, 10 in der gleichen Farbe. Die bestmögliche Hand.</string>
+    <string name="hand_straight_flush">Straight Flush</string>
+    <string name="hand_straight_flush_desc">Fünf aufeinanderfolgende Karten in der gleichen Farbe.</string>
+    <string name="hand_four_of_a_kind">Vierling</string>
+    <string name="hand_four_of_a_kind_desc">Vier Karten mit dem gleichen Wert.</string>
+    <string name="hand_full_house">Full House</string>
+    <string name="hand_full_house_desc">Ein Drilling plus ein Paar.</string>
+    <string name="hand_flush">Flush</string>
+    <string name="hand_flush_desc">Fünf Karten in der gleichen Farbe, nicht in Folge.</string>
+    <string name="hand_straight">Straight</string>
+    <string name="hand_straight_desc">Fünf aufeinanderfolgende Karten in gemischten Farben.</string>
+    <string name="hand_three_of_a_kind">Drilling</string>
+    <string name="hand_three_of_a_kind_desc">Drei Karten mit dem gleichen Wert.</string>
+    <string name="hand_two_pair">Zwei Paare</string>
+    <string name="hand_two_pair_desc">Zwei verschiedene Paare.</string>
+    <string name="hand_one_pair">Ein Paar</string>
+    <string name="hand_one_pair_desc">Zwei Karten mit dem gleichen Wert.</string>
+    <string name="hand_high_card">Höchste Karte</string>
+    <string name="hand_high_card_desc">Keine übereinstimmenden Karten. Die höchste Karte zählt.</string>
+
+    <!-- Game Flow -->
+    <string name="flow_title">Spielanleitung</string>
+    <string name="flow_blinds_title">Blinds</string>
+    <string name="flow_blinds_desc">Die beiden Spieler links vom Dealer setzen Pflichtbets (Small Blind und Big Blind), um den Pot zu starten.</string>
+    <string name="flow_preflop_title">Pre-Flop</string>
+    <string name="flow_preflop_desc">Jeder Spieler erhält 2 verdeckte Karten (Hole Cards). Spieler können Callen, Raisen oder Folden.</string>
+    <string name="flow_flop_title">Der Flop</string>
+    <string name="flow_flop_desc">3 Gemeinschaftskarten werden aufgedeckt. Eine neue Wettrunde folgt.</string>
+    <string name="flow_turn_title">Der Turn</string>
+    <string name="flow_turn_desc">Die 4. Gemeinschaftskarte wird aufgedeckt. Weitere Wettrunde.</string>
+    <string name="flow_river_title">Der River</string>
+    <string name="flow_river_desc">Die 5. und letzte Gemeinschaftskarte wird aufgedeckt. Letzte Wettrunde.</string>
+    <string name="flow_showdown_title">Showdown</string>
+    <string name="flow_showdown_desc">Verbliebene Spieler zeigen ihre Karten. Die beste 5-Karten-Hand gewinnt den Pot.</string>
+
+    <!-- Game Actions -->
+    <string name="action_fold">Fold</string>
+    <string name="action_check">Check</string>
+    <string name="action_call">Call</string>
+    <string name="action_raise">Raise</string>
+    <string name="action_allin">All In</string>
+
+    <!-- Game Screen -->
+    <string name="game_pot">Pot</string>
+    <string name="game_your_hand">Deine Hand</string>
+    <string name="game_community">Gemeinschaftskarten</string>
+    <string name="game_new_game">Neues Spiel</string>
+    <string name="game_difficulty">Schwierigkeit</string>
+    <string name="game_easy">Leicht</string>
+    <string name="game_medium">Mittel</string>
+    <string name="game_hard">Schwer</string>
+    <string name="game_chips">Chips</string>
+    <string name="game_winner">Gewinner</string>
+    <string name="game_you_win">Du gewinnst!</string>
+    <string name="game_you_lose">Du verlierst!</string>
+    <string name="game_phase_preflop">Pre-Flop</string>
+    <string name="game_phase_flop">Flop</string>
+    <string name="game_phase_turn">Turn</string>
+    <string name="game_phase_river">River</string>
+    <string name="game_phase_showdown">Showdown</string>
+    <string name="game_select_difficulty">Schwierigkeit wählen</string>
+    <string name="game_start">Spiel starten</string>
+    <string name="game_raise_amount">Raise-Betrag</string>
+
+    <!-- Strategy -->
+    <string name="strategy_title">Strategie-Trainer</string>
+    <string name="strategy_your_hand">Deine Hand</string>
+    <string name="strategy_board">Board</string>
+    <string name="strategy_question">Was tust du?</string>
+    <string name="strategy_correct">Richtig!</string>
+    <string name="strategy_wrong">Nicht ganz…</string>
+    <string name="strategy_explanation">Erklärung</string>
+    <string name="strategy_next">Nächstes Szenario</string>
+    <string name="strategy_progress">Szenario %1$d von %2$d</string>
+    <string name="strategy_win_rate">Gewinnchance ca.</string>
+    <string name="strategy_complete">Alle Szenarien abgeschlossen!</string>
+    <string name="strategy_restart">Neu starten</string>
+
+    <!-- Glossary -->
+    <string name="glossary_title">Glossar</string>
+
+    <!-- Navigation -->
+    <string name="nav_back">Zurück</string>
+</resources>
