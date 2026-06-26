@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,7 +23,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -106,48 +104,80 @@ fun GameScreen(
                     state = gameState!!,
                     onAction = { action, amount -> viewModel.humanAction(action, amount) },
                     onNewGame = { viewModel.newGame() },
-                    onHintRequest = { viewModel.requestHint() }
+                    onHintRequest = { viewModel.requestHint() },
+                    highlightCards = hint?.highlightCards ?: emptyList()
                 )
             }
 
-            // Hint dialog (shown on top of everything)
+            // Hint overlay – non-modal banner at the top, leaves the cards visible
             hint?.let { h ->
-                val handColor = when {
-                    h.handRank >= 7 -> Color(0xFF4CAF50)
-                    h.handRank >= 3 -> Color(0xFFFFC107)
-                    else            -> Color(0xFFE53935)
-                }
-                AlertDialog(
-                    onDismissRequest = { viewModel.dismissHint() },
-                    title = { Text("Hilfe") },
-                    text = {
-                        Column {
-                            Text(
-                                text = h.handName,
-                                color = handColor,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            Text(
-                                text = "Empfehlung: ${h.recommendation}",
-                                fontWeight = FontWeight.Bold,
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                text = h.explanation,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { viewModel.dismissHint() }) {
-                            Text("OK")
-                        }
-                    }
+                HintOverlay(
+                    hint = h,
+                    onDismiss = { viewModel.dismissHint() },
+                    modifier = Modifier.align(Alignment.TopCenter)
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun HintOverlay(
+    hint: HintState,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val handColor = when {
+        hint.handRank >= 7 -> Color(0xFF4CAF50)
+        hint.handRank >= 3 -> Color(0xFFFFC107)
+        else               -> Color(0xFFE53935)
+    }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(8.dp)
+            .background(Color(0xEE000000), RoundedCornerShape(12.dp))
+            .border(2.dp, handColor, RoundedCornerShape(12.dp))
+            .padding(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "💡 Hilfe",
+                    color = Color(0xFFBDBDBD),
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Text(
+                    text = hint.handName,
+                    color = handColor,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            IconButton(onClick = onDismiss) {
+                Text("✕", color = Color.White, fontSize = 20.sp)
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            text = "Empfehlung: ${hint.recommendation}",
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodyLarge
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = hint.explanation,
+            color = Color(0xFFE0E0E0),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        if (hint.highlightCards.isNotEmpty()) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = "Die gelb umrandeten Karten bilden deine Hand.",
+                color = Color(0xFFFFC107),
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
@@ -230,7 +260,8 @@ private fun GameTable(
     state: GameState,
     onAction: (com.pokertrainer.data.model.PlayerAction, Int) -> Unit,
     onNewGame: () -> Unit,
-    onHintRequest: () -> Unit
+    onHintRequest: () -> Unit,
+    highlightCards: List<com.pokertrainer.data.model.Card> = emptyList()
 ) {
     val human = state.humanPlayer
     val isHumanTurn = state.players.getOrNull(state.activePlayerIndex)?.isHuman == true
@@ -285,7 +316,7 @@ private fun GameTable(
                 repeat(5) { idx ->
                     val card = state.communityCards.getOrNull(idx)
                     if (card != null) {
-                        CardView(card = card, size = CardSize.MEDIUM)
+                        CardView(card = card, size = CardSize.MEDIUM, highlighted = card in highlightCards)
                     } else {
                         EmptyCardSlot(size = CardSize.MEDIUM)
                     }
@@ -344,7 +375,12 @@ private fun GameTable(
                             modifier = Modifier.padding(end = 16.dp)
                         )
                         human.hand.forEach { card ->
-                            CardView(card = card, size = CardSize.MEDIUM, modifier = Modifier.padding(2.dp))
+                            CardView(
+                                card = card,
+                                size = CardSize.MEDIUM,
+                                modifier = Modifier.padding(2.dp),
+                                highlighted = card in highlightCards
+                            )
                         }
                         if (isHumanTurn && !state.isGameOver) {
                             Spacer(Modifier.size(8.dp))
