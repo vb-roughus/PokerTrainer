@@ -33,14 +33,25 @@ Studio öffnen zu müssen.
 
 Das Skript baut die App mit Gradle. Dafür wird benötigt:
 
-- **JDK 17 oder neuer** – ist bereits enthalten, wenn **Android Studio**
-  installiert ist. Andernfalls Temurin/OpenJDK 17 installieren.
-- **Android SDK** – ebenfalls Teil von Android Studio. Falls Gradle das SDK
-  nicht findet, lege im Projektordner eine Datei **`local.properties`** an mit:
+- **JDK 17 oder neuer** – ist in **Android Studio** enthalten (als „JetBrains
+  Runtime"). Falls beim Start die Meldung *„JAVA_HOME is not set"* kommt, zeige
+  Gradle das JDK: in **PowerShell** einmalig ausführen
+  ```powershell
+  [Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Android\Android Studio\jbr", "User")
   ```
-  sdk.dir=C:\\Users\\DEINNAME\\AppData\\Local\\Android\\Sdk
+  Danach ein **neues** Fenster öffnen. Prüfen mit `java -version`.
+  (Ohne Android Studio: Temurin/OpenJDK 17 von https://adoptium.net, bei der
+  Installation „Set JAVA_HOME variable" anhaken.)
+- **Android SDK** – ebenfalls Teil von Android Studio. `install.bat` sucht es
+  automatisch (Umgebungsvariable `ANDROID_HOME`/`ANDROID_SDK_ROOT` oder der
+  Standardort `%LOCALAPPDATA%\Android\Sdk`) und legt bei Erfolg `local.properties`
+  selbst an. Wird es **nicht** gefunden, lege die Datei `local.properties` im
+  Projektordner von Hand an (Schrägstriche `/` verwenden):
   ```
-  (oder setze die Umgebungsvariable `ANDROID_HOME` auf diesen Pfad)
+  sdk.dir=C:/Users/DEINNAME/AppData/Local/Android/Sdk
+  ```
+  Den genauen Pfad zeigt Android Studio unter
+  Settings → Languages & Frameworks → Android SDK.
 
 > Der erste Lauf lädt Gradle 8.9 herunter und kann einige Minuten dauern.
 > Danach geht es deutlich schneller.
@@ -66,8 +77,8 @@ Bei Erfolg erscheint „**FERTIG!**". Öffne die App im App-Menü
 |---|---|
 | „Kein Telefon erkannt" | Kabel prüfen (Datenkabel!), USB-Debugging an, Dialog am Telefon bestätigen |
 | „USB-Debugging zulassen?" bleibt offen | Am Telefon auf „Zulassen" tippen, dann Skript neu starten |
-| Build-Fehler, JDK | Android Studio installieren oder JDK 17 einrichten |
-| SDK nicht gefunden | `local.properties` mit `sdk.dir=...` anlegen (siehe oben) |
+| „JAVA_HOME is not set" | `JAVA_HOME` auf das Android-Studio-JDK setzen (siehe Voraussetzungen), neues Fenster öffnen |
+| „SDK location not found" | `local.properties` mit `sdk.dir=...` anlegen (siehe oben) |
 
 Die App wird als **Debug-Version** installiert – ideal zum Ausprobieren,
 keine Anmeldung oder Store nötig.

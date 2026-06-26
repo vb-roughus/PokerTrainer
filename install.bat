@@ -62,6 +62,29 @@ if defined ADB (
     echo       Gradle versucht die Installation direkt ueber das Android SDK.
 )
 
+rem --- Android SDK suchen und local.properties anlegen (falls noetig) --------
+if not exist "local.properties" (
+    set "SDK="
+    if defined ANDROID_HOME if exist "%ANDROID_HOME%\platform-tools" set "SDK=%ANDROID_HOME%"
+    if not defined SDK if defined ANDROID_SDK_ROOT if exist "%ANDROID_SDK_ROOT%\platform-tools" set "SDK=%ANDROID_SDK_ROOT%"
+    if not defined SDK if exist "%LOCALAPPDATA%\Android\Sdk\platform-tools" set "SDK=%LOCALAPPDATA%\Android\Sdk"
+
+    if defined SDK (
+        set "SDKFWD=!SDK:\=/!"
+        > "local.properties" echo sdk.dir=!SDKFWD!
+        echo       Android SDK gefunden: !SDK!
+        echo       local.properties wurde automatisch angelegt.
+    ) else (
+        echo.
+        echo   [!] Android SDK nicht automatisch gefunden.
+        echo       Lege die Datei local.properties in diesem Ordner an mit:
+        echo         sdk.dir=C:/Users/DEINNAME/AppData/Local/Android/Sdk
+        echo       Den genauen Pfad zeigt Android Studio unter
+        echo       Settings ^> Languages ^& Frameworks ^> Android SDK. Siehe INSTALL.md
+        echo.
+    )
+)
+
 echo.
 echo [2/2] App wird gebaut und installiert ^(beim ersten Mal dauert das einige Minuten^)...
 echo.
