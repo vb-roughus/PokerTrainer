@@ -27,7 +27,8 @@ fun CardView(
     card: Card?,
     modifier: Modifier = Modifier,
     faceDown: Boolean = false,
-    size: CardSize = CardSize.MEDIUM
+    size: CardSize = CardSize.MEDIUM,
+    highlighted: Boolean = false
 ) {
     val cardColor = if (card?.isRed == true) CardRed else CardBlack
     val (width, height, fontSize, suitSize) = when (size) {
@@ -43,7 +44,11 @@ fun CardView(
                 color = if (faceDown) Color(0xFF1565C0) else CardWhite,
                 shape = RoundedCornerShape(6.dp)
             )
-            .border(1.dp, Color(0xFFBDBDBD), RoundedCornerShape(6.dp)),
+            .border(
+                width = if (highlighted) 3.dp else 1.dp,
+                color = if (highlighted) Color(0xFFFFC107) else Color(0xFFBDBDBD),
+                shape = RoundedCornerShape(6.dp)
+            ),
         contentAlignment = Alignment.Center
     ) {
         if (faceDown || card == null) {
