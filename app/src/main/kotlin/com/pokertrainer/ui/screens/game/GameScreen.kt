@@ -103,7 +103,8 @@ fun GameScreen(
                 GameTable(
                     state = gameState!!,
                     onAction = { action, amount -> viewModel.humanAction(action, amount) },
-                    onNewGame = { viewModel.newGame() },
+                    onNextHand = { viewModel.nextHand() },
+                    onRestart = { viewModel.restartMatch() },
                     onHintRequest = { viewModel.requestHint() },
                     highlightCards = hint?.highlightCards ?: emptyList()
                 )
@@ -259,7 +260,8 @@ private fun DifficultySelection(
 private fun GameTable(
     state: GameState,
     onAction: (com.pokertrainer.data.model.PlayerAction, Int) -> Unit,
-    onNewGame: () -> Unit,
+    onNextHand: () -> Unit,
+    onRestart: () -> Unit,
     onHintRequest: () -> Unit,
     highlightCards: List<com.pokertrainer.data.model.Card> = emptyList()
 ) {
@@ -332,7 +334,8 @@ private fun GameTable(
         }
 
         // Winner message or human player + controls
-        if (state.isGameOver && state.winnerMessage != null) {
+        if (state.isHandOver && state.winnerMessage != null) {
+            val humanChips = state.humanPlayer?.chips ?: 0
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -347,12 +350,33 @@ private fun GameTable(
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
                 )
+                if (state.isGameOver) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(
+                            if (humanChips <= 0) R.string.game_match_lost else R.string.game_match_won
+                        ),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (humanChips <= 0) Color(0xFFE53935) else Color(0xFF4CAF50),
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
-                Button(
-                    onClick = onNewGame,
-                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreenDark)
-                ) {
-                    Text(stringResource(R.string.game_new_game), color = Color.White)
+                if (state.isGameOver) {
+                    Button(
+                        onClick = onRestart,
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreenDark)
+                    ) {
+                        Text(stringResource(R.string.game_new_game), color = Color.White)
+                    }
+                } else {
+                    Button(
+                        onClick = onNextHand,
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreenDark)
+                    ) {
+                        Text(stringResource(R.string.game_next_hand), color = Color.White)
+                    }
                 }
             }
         } else {
