@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -61,6 +63,7 @@ fun GameScreen(
     val gameState by viewModel.gameState.collectAsState()
     val gameStarted by viewModel.gameStarted.collectAsState()
     val selectedDifficulty by viewModel.selectedDifficulty.collectAsState()
+    val hint by viewModel.hint.collectAsState()
 
     Scaffold(
         topBar = {
@@ -102,7 +105,47 @@ fun GameScreen(
                 GameTable(
                     state = gameState!!,
                     onAction = { action, amount -> viewModel.humanAction(action, amount) },
-                    onNewGame = { viewModel.newGame() }
+                    onNewGame = { viewModel.newGame() },
+                    onHintRequest = { viewModel.requestHint() }
+                )
+            }
+
+            // Hint dialog (shown on top of everything)
+            hint?.let { h ->
+                val handColor = when {
+                    h.handRank >= 7 -> Color(0xFF4CAF50)
+                    h.handRank >= 3 -> Color(0xFFFFC107)
+                    else            -> Color(0xFFE53935)
+                }
+                AlertDialog(
+                    onDismissRequest = { viewModel.dismissHint() },
+                    title = { Text("Hilfe") },
+                    text = {
+                        Column {
+                            Text(
+                                text = h.handName,
+                                color = handColor,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Text(
+                                text = "Empfehlung: ${h.recommendation}",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = h.explanation,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = { viewModel.dismissHint() }) {
+                            Text("OK")
+                        }
+                    }
                 )
             }
         }
@@ -186,7 +229,8 @@ private fun DifficultySelection(
 private fun GameTable(
     state: GameState,
     onAction: (com.pokertrainer.data.model.PlayerAction, Int) -> Unit,
-    onNewGame: () -> Unit
+    onNewGame: () -> Unit,
+    onHintRequest: () -> Unit
 ) {
     val human = state.humanPlayer
     val isHumanTurn = state.players.getOrNull(state.activePlayerIndex)?.isHuman == true
@@ -301,6 +345,17 @@ private fun GameTable(
                         )
                         human.hand.forEach { card ->
                             CardView(card = card, size = CardSize.MEDIUM, modifier = Modifier.padding(2.dp))
+                        }
+                        if (isHumanTurn && !state.isGameOver) {
+                            Spacer(Modifier.size(8.dp))
+                            Button(
+                                onClick = onHintRequest,
+                                modifier = Modifier.size(40.dp).padding(0.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107)),
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                            ) {
+                                Text("?", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                            }
                         }
                     }
                     if (isHumanTurn && !state.isGameOver) {
