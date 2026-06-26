@@ -70,7 +70,7 @@ class GameViewModel : ViewModel() {
             val result = HandEvaluator.evaluate(allCards)
             val rank = result.handRank.rank
             val (rec, expl) = recommendationFor(rank)
-            HintState(result.handRank.displayName, rank, rec, expl, result.bestCards)
+            HintState(result.handRank.displayName, rank, rec, expl, HandEvaluator.definingCards(result))
         }
     }
 

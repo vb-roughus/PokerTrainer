@@ -37,6 +37,30 @@ object HandEvaluator {
         return best ?: evaluate5(cards.take(5))
     }
 
+    /**
+     * Returns only the cards that actually form the hand's value, not the
+     * full 5-card hand. For a pair that is the two paired cards; for trips the
+     * three matching cards; for two pair all four; for quads the four. For a
+     * straight, flush, full house and (straight/royal) flush all five cards
+     * are needed, so all are returned. For a high card only the top card.
+     */
+    fun definingCards(result: HandResult): List<Card> {
+        val cards = result.bestCards
+        return when (result.handRank) {
+            HandRank.STRAIGHT, HandRank.FLUSH, HandRank.FULL_HOUSE,
+            HandRank.STRAIGHT_FLUSH, HandRank.ROYAL_FLUSH -> cards
+            HandRank.FOUR_OF_A_KIND, HandRank.THREE_OF_A_KIND, HandRank.ONE_PAIR -> {
+                val grouped = cards.groupBy { it.rank }
+                val maxCount = grouped.values.maxOf { it.size }
+                grouped.values.first { it.size == maxCount }
+            }
+            HandRank.TWO_PAIR ->
+                cards.groupBy { it.rank }.values.filter { it.size == 2 }.flatten()
+            HandRank.HIGH_CARD ->
+                listOfNotNull(cards.maxByOrNull { it.rank.value })
+        }
+    }
+
     private fun evaluate5(cards: List<Card>): HandResult {
         val sorted = cards.sortedByDescending { it.rank.value }
         val isFlush = cards.map { it.suit }.toSet().size == 1

@@ -174,7 +174,7 @@ private fun HintOverlay(
         if (hint.highlightCards.isNotEmpty()) {
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "Die gelb umrandeten Karten bilden deine Hand.",
+                text = "Die gelb umrandeten Karten machen deine Wertigkeit aus.",
                 color = Color(0xFFFFC107),
                 style = MaterialTheme.typography.bodySmall
             )
