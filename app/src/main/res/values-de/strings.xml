@@ -65,6 +65,9 @@
     <string name="game_your_hand">Deine Hand</string>
     <string name="game_community">Gemeinschaftskarten</string>
     <string name="game_new_game">Neues Spiel</string>
+    <string name="game_next_hand">Nächste Hand</string>
+    <string name="game_match_lost">Du hast keine Chips mehr!</string>
+    <string name="game_match_won">Du hast alle Chips gewonnen!</string>
     <string name="game_difficulty">Schwierigkeit</string>
     <string name="game_easy">Leicht</string>
     <string name="game_medium">Mittel</string>

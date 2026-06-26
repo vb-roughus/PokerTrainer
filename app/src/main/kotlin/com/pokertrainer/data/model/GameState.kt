@@ -19,7 +19,8 @@ data class GameState(
     val smallBlind: Int = 10,
     val bigBlind: Int = 20,
     val winnerMessage: String? = null,
-    val isGameOver: Boolean = false,
+    val isHandOver: Boolean = false,   // eine Hand ist fertig (Showdown)
+    val isGameOver: Boolean = false,   // das Match ist fertig (Spieler pleite oder alle Chips gewonnen)
     val difficulty: Difficulty = Difficulty.EASY,
     val minRaise: Int = 20
 )

@@ -41,15 +41,31 @@ class GameViewModel : ViewModel() {
     }
 
     fun startGame() {
+        _hint.value = null
         _gameState.value = engine.newGame(_selectedDifficulty.value)
         _gameStarted.value = true
     }
 
     fun humanAction(action: PlayerAction, raiseAmount: Int = 0) {
         val current = _gameState.value ?: return
+        _hint.value = null
         _gameState.value = engine.humanAction(current, action, raiseAmount)
     }
 
+    /** Deal the next hand, keeping the current chip stacks. */
+    fun nextHand() {
+        val current = _gameState.value ?: return
+        _hint.value = null
+        _gameState.value = engine.nextHand(current)
+    }
+
+    /** Restart a fresh match in the same difficulty (used after the match ends). */
+    fun restartMatch() {
+        _hint.value = null
+        _gameState.value = engine.newGame(_selectedDifficulty.value)
+    }
+
+    /** Back to the difficulty selection (top-bar reset). */
     fun newGame() {
         _gameStarted.value = false
         _gameState.value = null

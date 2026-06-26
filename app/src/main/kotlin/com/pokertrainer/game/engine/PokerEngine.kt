@@ -13,39 +13,71 @@ import com.pokertrainer.game.ai.MediumAI
 class PokerEngine {
     private val deck = Deck()
 
+    private val startingChips = 1000
+    private val smallBlind = 10
+    private val bigBlind = 20
+
+    /** Starts a brand-new match: fresh players with full stacks. */
     fun newGame(difficulty: Difficulty): GameState {
-        deck.reset()
-        val human = Player(
-            id = 0, name = "You", chips = 1000, isHuman = true,
-            hand = deck.deal(2)
-        )
+        val human = Player(id = 0, name = "You", chips = startingChips, isHuman = true)
         val aiNames = listOf("Alice", "Bob", "Charlie")
         val aiPlayers = (1..2).map { i ->
-            Player(id = i, name = aiNames[i - 1], chips = 1000, isHuman = false, hand = deck.deal(2))
+            Player(id = i, name = aiNames[i - 1], chips = startingChips, isHuman = false)
         }
-        val players = listOf(human) + aiPlayers
-        val dealerIndex = 0
-        val smallBlindIndex = (dealerIndex + 1) % players.size
-        val bigBlindIndex = (dealerIndex + 2) % players.size
+        return startHand(listOf(human) + aiPlayers, dealerIndex = 0, difficulty = difficulty)
+    }
 
-        val withBlinds = players.mapIndexed { idx, p ->
-            when (idx) {
-                smallBlindIndex -> p.copy(chips = p.chips - 10, currentBet = 10)
-                bigBlindIndex -> p.copy(chips = p.chips - 20, currentBet = 20)
-                else -> p
+    /** Deals the next hand of an ongoing match, carrying over each player's chips. */
+    fun nextHand(state: GameState): GameState {
+        val newDealer = nextWithChips(state.players, state.dealerIndex)
+        return startHand(state.players, if (newDealer >= 0) newDealer else state.dealerIndex, state.difficulty)
+    }
+
+    private fun startHand(prevPlayers: List<Player>, dealerIndex: Int, difficulty: Difficulty): GameState {
+        deck.reset()
+        // Reset every player for the new hand. Players without chips sit out (folded).
+        val players = prevPlayers.map { p ->
+            if (p.chips > 0) {
+                p.copy(hand = deck.deal(2), currentBet = 0, hasFolded = false, isAllIn = false, lastAction = null)
+            } else {
+                p.copy(hand = emptyList(), currentBet = 0, hasFolded = true, isAllIn = false, lastAction = null)
             }
+        }.toMutableList()
+
+        val sbIndex = nextWithChips(players, dealerIndex)
+        val bbIndex = nextWithChips(players, sbIndex.takeIf { it >= 0 } ?: dealerIndex)
+
+        var pot = 0
+        var currentBet = 0
+        if (sbIndex >= 0) {
+            val p = players[sbIndex]
+            val amount = minOf(smallBlind, p.chips)
+            players[sbIndex] = p.copy(chips = p.chips - amount, currentBet = amount, isAllIn = p.chips - amount == 0)
+            pot += amount
+            currentBet = maxOf(currentBet, amount)
+        }
+        if (bbIndex >= 0 && bbIndex != sbIndex) {
+            val p = players[bbIndex]
+            val amount = minOf(bigBlind, p.chips)
+            players[bbIndex] = p.copy(chips = p.chips - amount, currentBet = amount, isAllIn = p.chips - amount == 0)
+            pot += amount
+            currentBet = maxOf(currentBet, amount)
         }
 
-        return GameState(
-            players = withBlinds,
+        val firstToAct = nextWithChips(players, bbIndex.takeIf { it >= 0 } ?: dealerIndex)
+
+        val started = GameState(
+            players = players,
             communityCards = emptyList(),
-            pot = 30,
-            currentBet = 20,
+            pot = pot,
+            currentBet = currentBet,
             phase = BettingRound.PREFLOP,
-            activePlayerIndex = (bigBlindIndex + 1) % players.size,
+            activePlayerIndex = if (firstToAct >= 0) firstToAct else dealerIndex,
             dealerIndex = dealerIndex,
             difficulty = difficulty
         )
+        // If the first player to act is an AI, let it act right away.
+        return progressGame(started)
     }
 
     fun humanAction(state: GameState, action: PlayerAction, raiseAmount: Int = 0): GameState {
@@ -184,24 +216,45 @@ class PokerEngine {
             HandEvaluator.evaluate(player.hand + state.communityCards)
         } ?: return state
 
-        val winnerHand = HandEvaluator.evaluate(winner.hand + state.communityCards)
+        val msg = if (active.size == 1) {
+            // Alle anderen sind ausgestiegen – keine Wertigkeit nötig.
+            if (winner.isHuman) "Du gewinnst den Pot! +${state.pot} Chips"
+            else "${winner.name} gewinnt den Pot."
+        } else {
+            val winnerHand = HandEvaluator.evaluate(winner.hand + state.communityCards)
+            if (winner.isHuman) "Du gewinnst mit ${winnerHand.handRank.displayName}! +${state.pot} Chips"
+            else "${winner.name} gewinnt mit ${winnerHand.handRank.displayName}."
+        }
+
         val updatedPlayers = state.players.map { p ->
             if (p.id == winner.id) p.copy(chips = p.chips + state.pot) else p
         }
 
-        val msg = if (winner.isHuman) {
-            "You win with ${winnerHand.handRank.displayName}! +${state.pot} chips"
-        } else {
-            "${winner.name} wins with ${winnerHand.handRank.displayName}!"
-        }
+        val human = updatedPlayers.firstOrNull { it.isHuman }
+        val humanBroke = (human?.chips ?: 0) <= 0
+        val opponentsBroke = updatedPlayers.filter { !it.isHuman }.all { it.chips <= 0 }
+        val matchOver = humanBroke || opponentsBroke
 
         return state.copy(
             players = updatedPlayers,
             phase = BettingRound.SHOWDOWN,
             winnerMessage = msg,
-            isGameOver = true,
+            isHandOver = true,
+            isGameOver = matchOver,
             pot = 0
         )
+    }
+
+    /** Next index after [from] whose player still has chips, or -1 if none. */
+    private fun nextWithChips(players: List<Player>, from: Int): Int {
+        val n = players.size
+        if (n == 0) return -1
+        var idx = ((from.coerceAtLeast(0)) + 1) % n
+        repeat(n) {
+            if (players[idx].chips > 0) return idx
+            idx = (idx + 1) % n
+        }
+        return -1
     }
 
     private fun nextActivePlayer(players: List<Player>, current: Int): Int {
