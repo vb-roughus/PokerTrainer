@@ -1,5 +1,6 @@
 package com.pokertrainer.game.ai
 
+import com.pokertrainer.data.model.BettingRound
 import com.pokertrainer.data.model.GameState
 import com.pokertrainer.data.model.PlayerAction
 import com.pokertrainer.data.model.Rank
@@ -28,9 +29,10 @@ object EasyAI {
                 else if (callAmount <= state.bigBlind * 2) Pair(PlayerAction.CALL, 0)
                 else Pair(PlayerAction.FOLD, 0)
             }
-            // Weak hand: check or fold
+            // Weak hand: check, limp cheaply preflop, otherwise fold
             else -> {
                 if (callAmount == 0) Pair(PlayerAction.CHECK, 0)
+                else if (state.phase == BettingRound.PREFLOP && callAmount <= state.bigBlind) Pair(PlayerAction.CALL, 0)
                 else Pair(PlayerAction.FOLD, 0)
             }
         }

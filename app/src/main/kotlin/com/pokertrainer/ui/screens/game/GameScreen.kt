@@ -284,7 +284,8 @@ private fun GameTable(
                     player = aiPlayer,
                     isActive = state.players.getOrNull(state.activePlayerIndex)?.id == aiPlayer.id,
                     showCards = state.phase == BettingRound.SHOWDOWN,
-                    modifier = Modifier.weight(1f).padding(4.dp)
+                    modifier = Modifier.weight(1f).padding(4.dp),
+                    highlightCards = state.showdownCards
                 )
             }
         }
@@ -318,7 +319,11 @@ private fun GameTable(
                 repeat(5) { idx ->
                     val card = state.communityCards.getOrNull(idx)
                     if (card != null) {
-                        CardView(card = card, size = CardSize.MEDIUM, highlighted = card in highlightCards)
+                        CardView(
+                            card = card,
+                            size = CardSize.MEDIUM,
+                            highlighted = card in highlightCards || card in state.showdownCards
+                        )
                     } else {
                         EmptyCardSlot(size = CardSize.MEDIUM)
                     }
@@ -333,93 +338,92 @@ private fun GameTable(
             )
         }
 
-        // Winner message or human player + controls
-        if (state.isHandOver && state.winnerMessage != null) {
-            val humanChips = state.humanPlayer?.chips ?: 0
+        // Human player row (always visible) + result banner / controls / waiting below it
+        if (human != null) {
+            val humanHighlight = highlightCards + state.showdownCards
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xDD000000), RoundedCornerShape(12.dp))
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = state.winnerMessage,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color(0xFFFFC107),
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
-                if (state.isGameOver) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(
-                            if (humanChips <= 0) R.string.game_match_lost else R.string.game_match_won
-                        ),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (humanChips <= 0) Color(0xFFE53935) else Color(0xFF4CAF50),
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center
-                    )
-                }
-                Spacer(Modifier.height(12.dp))
-                if (state.isGameOver) {
-                    Button(
-                        onClick = onRestart,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreenDark)
-                    ) {
-                        Text(stringResource(R.string.game_new_game), color = Color.White)
-                    }
-                } else {
-                    Button(
-                        onClick = onNextHand,
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreenDark)
-                    ) {
-                        Text(stringResource(R.string.game_next_hand), color = Color.White)
-                    }
-                }
-            }
-        } else {
-            // Human player section
-            if (human != null) {
-                Column(
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "${human.name}  🪙 ${human.chips}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(end = 16.dp)
+                    Text(
+                        text = "${human.name}  🪙 ${human.chips}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
+                    human.hand.forEach { card ->
+                        CardView(
+                            card = card,
+                            size = CardSize.MEDIUM,
+                            modifier = Modifier.padding(2.dp),
+                            highlighted = card in humanHighlight
                         )
-                        human.hand.forEach { card ->
-                            CardView(
-                                card = card,
-                                size = CardSize.MEDIUM,
-                                modifier = Modifier.padding(2.dp),
-                                highlighted = card in highlightCards
-                            )
+                    }
+                    if (isHumanTurn && !state.isHandOver) {
+                        Spacer(Modifier.size(8.dp))
+                        Button(
+                            onClick = onHintRequest,
+                            modifier = Modifier.size(40.dp).padding(0.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107)),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                        ) {
+                            Text("?", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                         }
-                        if (isHumanTurn && !state.isGameOver) {
-                            Spacer(Modifier.size(8.dp))
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                when {
+                    state.isHandOver && state.winnerMessage != null -> {
+                        val humanChips = human.chips
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xDD000000), RoundedCornerShape(12.dp))
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = state.winnerMessage,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = Color(0xFFFFC107),
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                            if (state.isGameOver) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(
+                                        if (humanChips <= 0) R.string.game_match_lost else R.string.game_match_won
+                                    ),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = if (humanChips <= 0) Color(0xFFE53935) else Color(0xFF4CAF50),
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                            Spacer(Modifier.height(12.dp))
                             Button(
-                                onClick = onHintRequest,
-                                modifier = Modifier.size(40.dp).padding(0.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFC107)),
-                                contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                                onClick = if (state.isGameOver) onRestart else onNextHand,
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreenDark)
                             ) {
-                                Text("?", color = Color.Black, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                                Text(
+                                    text = stringResource(
+                                        if (state.isGameOver) R.string.game_new_game else R.string.game_next_hand
+                                    ),
+                                    color = Color.White
+                                )
                             }
                         }
                     }
-                    if (isHumanTurn && !state.isGameOver) {
-                        Spacer(Modifier.height(4.dp))
+                    isHumanTurn -> {
                         BettingControls(
                             state = state,
                             onAction = onAction,
@@ -427,7 +431,8 @@ private fun GameTable(
                                 .fillMaxWidth()
                                 .background(Color(0xDD000000), RoundedCornerShape(12.dp))
                         )
-                    } else if (!state.isGameOver) {
+                    }
+                    else -> {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -435,7 +440,7 @@ private fun GameTable(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "⏳ Waiting for ${state.players.getOrNull(state.activePlayerIndex)?.name}…",
+                                text = "⏳ Warte auf ${state.players.getOrNull(state.activePlayerIndex)?.name}…",
                                 color = Color(0xFFBDBDBD),
                                 style = MaterialTheme.typography.bodyMedium
                             )

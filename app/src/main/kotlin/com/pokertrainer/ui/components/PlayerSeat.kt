@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.pokertrainer.data.model.Card
 import com.pokertrainer.data.model.Player
 import com.pokertrainer.data.model.PlayerAction
 
@@ -27,7 +28,8 @@ fun PlayerSeat(
     player: Player,
     isActive: Boolean,
     showCards: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    highlightCards: List<Card> = emptyList()
 ) {
     val borderColor = when {
         player.hasFolded -> Color(0xFF616161)
@@ -63,10 +65,12 @@ fun PlayerSeat(
                 EmptyCardSlot(size = CardSize.SMALL)
             } else {
                 player.hand.forEach { card ->
+                    val revealed = showCards || player.isHuman
                     CardView(
                         card = card,
-                        faceDown = !showCards && !player.isHuman,
-                        size = CardSize.SMALL
+                        faceDown = !revealed,
+                        size = CardSize.SMALL,
+                        highlighted = revealed && card in highlightCards
                     )
                 }
             }

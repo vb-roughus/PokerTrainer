@@ -44,6 +44,7 @@ object HardAI {
             }
             else -> {
                 if (callAmount == 0) Pair(PlayerAction.CHECK, 0)
+                else if (state.phase == BettingRound.PREFLOP && callAmount <= state.bigBlind) Pair(PlayerAction.CALL, 0)
                 else Pair(PlayerAction.FOLD, 0)
             }
         }

@@ -216,12 +216,15 @@ class PokerEngine {
             HandEvaluator.evaluate(player.hand + state.communityCards)
         } ?: return state
 
+        val winningCards: List<com.pokertrainer.data.model.Card>
         val msg = if (active.size == 1) {
             // Alle anderen sind ausgestiegen – keine Wertigkeit nötig.
+            winningCards = emptyList()
             if (winner.isHuman) "Du gewinnst den Pot! +${state.pot} Chips"
             else "${winner.name} gewinnt den Pot."
         } else {
             val winnerHand = HandEvaluator.evaluate(winner.hand + state.communityCards)
+            winningCards = HandEvaluator.definingCards(winnerHand)
             if (winner.isHuman) "Du gewinnst mit ${winnerHand.handRank.displayName}! +${state.pot} Chips"
             else "${winner.name} gewinnt mit ${winnerHand.handRank.displayName}."
         }
@@ -241,6 +244,7 @@ class PokerEngine {
             winnerMessage = msg,
             isHandOver = true,
             isGameOver = matchOver,
+            showdownCards = winningCards,
             pot = 0
         )
     }
