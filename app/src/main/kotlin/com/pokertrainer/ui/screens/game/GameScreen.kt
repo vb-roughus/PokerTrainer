@@ -59,9 +59,9 @@ import com.pokertrainer.ui.components.AnimatedCard
 import com.pokertrainer.ui.components.BetChip
 import com.pokertrainer.ui.components.BettingControls
 import com.pokertrainer.ui.components.CardSize
-import com.pokertrainer.ui.components.DealerBadge
 import com.pokertrainer.ui.components.EmptyCardSlot
 import com.pokertrainer.ui.components.PlayerSeat
+import com.pokertrainer.ui.components.RoleBadges
 import com.pokertrainer.ui.components.PotChip
 import com.pokertrainer.ui.theme.PrimaryGreenDark
 import com.pokertrainer.ui.theme.TableFelt
@@ -375,6 +375,8 @@ private fun GameTable(
                     modifier = Modifier.weight(1f).padding(4.dp),
                     highlightCards = state.showdownCards,
                     isDealer = state.players.indexOfFirst { it.id == aiPlayer.id } == state.dealerIndex,
+                    isSmallBlind = state.players.indexOfFirst { it.id == aiPlayer.id } == state.smallBlindIndex,
+                    isBigBlind = state.players.indexOfFirst { it.id == aiPlayer.id } == state.bigBlindIndex,
                     isWinner = state.isHandOver && state.winnerId == aiPlayer.id
                 )
             }
@@ -438,15 +440,21 @@ private fun GameTable(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val humanIsDealer = state.players.indexOfFirst { it.id == human.id } == state.dealerIndex
+                    val humanIndex = state.players.indexOfFirst { it.id == human.id }
                     val humanIsWinner = state.isHandOver && state.winnerId == human.id
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(end = 16.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (humanIsDealer) {
-                                DealerBadge()
+                            val hasRole = humanIndex == state.dealerIndex ||
+                                humanIndex == state.smallBlindIndex || humanIndex == state.bigBlindIndex
+                            if (hasRole) {
+                                RoleBadges(
+                                    isDealer = humanIndex == state.dealerIndex,
+                                    isSmallBlind = humanIndex == state.smallBlindIndex,
+                                    isBigBlind = humanIndex == state.bigBlindIndex
+                                )
                                 Spacer(Modifier.size(4.dp))
                             }
                             Text(

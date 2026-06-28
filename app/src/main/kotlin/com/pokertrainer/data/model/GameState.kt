@@ -16,6 +16,8 @@ data class GameState(
     val phase: BettingRound = BettingRound.PREFLOP,
     val activePlayerIndex: Int = 0,
     val dealerIndex: Int = 0,
+    val smallBlindIndex: Int = -1,
+    val bigBlindIndex: Int = -1,
     val smallBlind: Int = 10,
     val bigBlind: Int = 20,
     val winnerMessage: String? = null,
