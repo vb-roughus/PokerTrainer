@@ -22,6 +22,7 @@ data class GameState(
     val isHandOver: Boolean = false,   // eine Hand ist fertig (Showdown)
     val isGameOver: Boolean = false,   // das Match ist fertig (Spieler pleite oder alle Chips gewonnen)
     val showdownCards: List<Card> = emptyList(),  // wertbildende Karten der Gewinnerhand
+    val winnerId: Int? = null,                    // Gewinner der letzten Hand (für Hervorhebung)
     val difficulty: Difficulty = Difficulty.EASY,
     val minRaise: Int = 20
 )

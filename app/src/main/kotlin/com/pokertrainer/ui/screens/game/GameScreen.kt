@@ -1,6 +1,11 @@
 package com.pokertrainer.ui.screens.game
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -23,12 +28,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,11 +54,13 @@ import com.pokertrainer.data.model.Difficulty
 import com.pokertrainer.data.model.GameState
 import com.pokertrainer.data.model.humanPlayer
 import com.pokertrainer.ui.components.AnimatedCard
+import com.pokertrainer.ui.components.BetChip
 import com.pokertrainer.ui.components.BettingControls
 import com.pokertrainer.ui.components.CardSize
 import com.pokertrainer.ui.components.DealerBadge
 import com.pokertrainer.ui.components.EmptyCardSlot
 import com.pokertrainer.ui.components.PlayerSeat
+import com.pokertrainer.ui.components.PotChip
 import com.pokertrainer.ui.theme.PrimaryGreenDark
 import com.pokertrainer.ui.theme.TableFelt
 import com.pokertrainer.ui.theme.TableGreen
@@ -98,7 +110,9 @@ fun GameScreen(
                 DifficultySelection(
                     selected = selectedDifficulty,
                     onSelect = { viewModel.selectDifficulty(it) },
-                    onStart = { viewModel.startGame() }
+                    onStart = { viewModel.startGame() },
+                    initialSpeed = viewModel.speedFraction(),
+                    onSpeedChange = { viewModel.setSpeed(it) }
                 )
             } else if (gameState != null) {
                 GameTable(
@@ -188,7 +202,9 @@ private fun HintOverlay(
 private fun DifficultySelection(
     selected: Difficulty,
     onSelect: (Difficulty) -> Unit,
-    onStart: () -> Unit
+    onStart: () -> Unit,
+    initialSpeed: Float,
+    onSpeedChange: (Float) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -240,6 +256,34 @@ private fun DifficultySelection(
         }
 
         Spacer(Modifier.height(32.dp))
+
+        // Speed control for the animations / AI steps
+        Text(
+            text = stringResource(R.string.game_speed),
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White,
+            fontWeight = FontWeight.Bold
+        )
+        var speed by remember { mutableFloatStateOf(initialSpeed) }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("🐢", fontSize = 22.sp)
+            Slider(
+                value = speed,
+                onValueChange = { speed = it; onSpeedChange(it) },
+                valueRange = 0f..1f,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                colors = SliderDefaults.colors(
+                    thumbColor = Color(0xFFFFC107),
+                    activeTrackColor = Color(0xFFFFC107)
+                )
+            )
+            Text("🐇", fontSize = 22.sp)
+        }
+
+        Spacer(Modifier.height(24.dp))
         Button(
             onClick = onStart,
             modifier = Modifier
@@ -287,7 +331,8 @@ private fun GameTable(
                     showCards = state.phase == BettingRound.SHOWDOWN,
                     modifier = Modifier.weight(1f).padding(4.dp),
                     highlightCards = state.showdownCards,
-                    isDealer = state.players.indexOfFirst { it.id == aiPlayer.id } == state.dealerIndex
+                    isDealer = state.players.indexOfFirst { it.id == aiPlayer.id } == state.dealerIndex,
+                    isWinner = state.isHandOver && state.winnerId == aiPlayer.id
                 )
             }
         }
@@ -335,12 +380,7 @@ private fun GameTable(
             }
             Spacer(Modifier.height(8.dp))
             val animatedPot by animateIntAsState(targetValue = state.pot, label = "pot")
-            Text(
-                text = "💰 ${stringResource(R.string.game_pot)}: $animatedPot",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                fontWeight = FontWeight.Bold
-            )
+            PotChip(amount = animatedPot)
         }
 
         // Human player row (always visible) + result banner / controls / waiting below it
@@ -356,26 +396,26 @@ private fun GameTable(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     val humanIsDealer = state.players.indexOfFirst { it.id == human.id } == state.dealerIndex
+                    val humanIsWinner = state.isHandOver && state.winnerId == human.id
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(end = 16.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            if (humanIsDealer) DealerBadge()
+                            if (humanIsDealer) {
+                                DealerBadge()
+                                Spacer(Modifier.size(4.dp))
+                            }
                             Text(
-                                text = "${human.name}  🪙 ${human.chips}",
+                                text = (if (humanIsWinner) "🏆 " else "") + "${human.name}  🪙 ${human.chips}",
                                 style = MaterialTheme.typography.titleMedium,
-                                color = Color.White,
+                                color = if (humanIsWinner) Color(0xFF81C784) else Color.White,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                         if (human.currentBet > 0) {
-                            Text(
-                                text = "Einsatz: ${human.currentBet}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF90CAF9),
-                                fontWeight = FontWeight.Bold
-                            )
+                            Spacer(Modifier.size(2.dp))
+                            BetChip(amount = human.currentBet, fromBelow = true)
                         }
                     }
                     human.hand.forEach { card ->
@@ -404,6 +444,7 @@ private fun GameTable(
                 when {
                     state.isHandOver && state.winnerMessage != null -> {
                         val humanChips = human.chips
+                        val humanWon = state.winnerId == human.id
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -411,6 +452,17 @@ private fun GameTable(
                                 .padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+                            if (humanWon) {
+                                val celebrate = remember(state.winnerMessage) { MutableTransitionState(false) }
+                                celebrate.targetState = true
+                                AnimatedVisibility(
+                                    visibleState = celebrate,
+                                    enter = scaleIn(initialScale = 0.3f, animationSpec = tween(400)) + fadeIn(tween(400))
+                                ) {
+                                    Text(text = "🏆", fontSize = 44.sp)
+                                }
+                                Spacer(Modifier.height(4.dp))
+                            }
                             Text(
                                 text = state.winnerMessage,
                                 style = MaterialTheme.typography.titleLarge,
