@@ -118,7 +118,7 @@ class GameViewModel : ViewModel() {
     companion object {
         private const val DEFAULT_STEP_DELAY_MS = 750L
         private const val MIN_STEP_DELAY_MS = 150L   // fastest
-        private const val MAX_STEP_DELAY_MS = 1500L  // slowest
+        private const val MAX_STEP_DELAY_MS = 3000L  // slowest (50% langsamer als zuvor)
     }
 
     fun requestHint() {
