@@ -17,11 +17,15 @@ object EasyAI {
         val callAmount = (state.currentBet - player.currentBet).coerceAtLeast(0)
 
         return when {
-            // Strong hand: bet or call
+            // Strong hand (two pair+ postflop, or a premium starting hand preflop):
+            // value-raise when it is cheap, otherwise call.
             handStrength >= HandRank.TWO_PAIR.rank -> {
-                if (callAmount == 0) Pair(PlayerAction.CHECK, 0)
-                else if (callAmount <= player.chips / 3) Pair(PlayerAction.CALL, 0)
-                else Pair(PlayerAction.FOLD, 0)
+                when {
+                    callAmount == 0 -> Pair(PlayerAction.RAISE, state.bigBlind * 2)
+                    callAmount <= player.chips / 4 -> Pair(PlayerAction.RAISE, state.bigBlind * 2)
+                    callAmount <= player.chips / 2 -> Pair(PlayerAction.CALL, 0)
+                    else -> Pair(PlayerAction.FOLD, 0)
+                }
             }
             // Medium hand: call small bets
             handStrength >= HandRank.ONE_PAIR.rank -> {
