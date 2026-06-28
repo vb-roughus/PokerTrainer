@@ -27,13 +27,14 @@ object HardAI {
                 else if (potOdds < 0.5f) Pair(PlayerAction.RAISE, potBet)
                 else Pair(PlayerAction.ALL_IN, 0)
             }
-            handStrength >= HandRank.THREE_OF_A_KIND.rank -> {
+            // Two pair / trips postflop, or a premium starting hand preflop: value-raise.
+            handStrength >= HandRank.TWO_PAIR.rank -> {
                 when {
                     callAmount == 0 -> {
-                        val bet = (state.pot * 0.5f).toInt().coerceAtLeast(state.bigBlind)
+                        val bet = (state.pot * 0.5f).toInt().coerceAtLeast(state.bigBlind * 2)
                         Pair(PlayerAction.RAISE, bet)
                     }
-                    potOdds < 0.35f -> Pair(PlayerAction.CALL, 0)
+                    potOdds < 0.4f -> Pair(PlayerAction.RAISE, state.bigBlind * 2)
                     else -> Pair(PlayerAction.FOLD, 0)
                 }
             }

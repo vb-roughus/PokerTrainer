@@ -30,8 +30,9 @@ object MediumAI {
                 else Pair(PlayerAction.RAISE, state.bigBlind * 2)
             }
             effectiveStrength >= HandRank.TWO_PAIR.rank -> {
-                if (callAmount == 0) Pair(PlayerAction.CHECK, 0)
-                else if (potOdds < 0.3f) Pair(PlayerAction.CALL, 0)
+                val raiseAmt = (state.pot * 0.6).toInt().coerceAtLeast(state.bigBlind * 2)
+                if (callAmount == 0) Pair(PlayerAction.RAISE, raiseAmt)
+                else if (potOdds < 0.35f) Pair(PlayerAction.RAISE, state.bigBlind * 2)
                 else Pair(PlayerAction.FOLD, 0)
             }
             effectiveStrength >= HandRank.ONE_PAIR.rank -> {
