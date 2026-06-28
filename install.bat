@@ -68,20 +68,25 @@ if not exist "local.properties" (
     if defined ANDROID_HOME if exist "%ANDROID_HOME%\platform-tools" set "SDK=%ANDROID_HOME%"
     if not defined SDK if defined ANDROID_SDK_ROOT if exist "%ANDROID_SDK_ROOT%\platform-tools" set "SDK=%ANDROID_SDK_ROOT%"
     if not defined SDK if exist "%LOCALAPPDATA%\Android\Sdk\platform-tools" set "SDK=%LOCALAPPDATA%\Android\Sdk"
+    if not defined SDK if exist "%USERPROFILE%\AppData\Local\Android\Sdk\platform-tools" set "SDK=%USERPROFILE%\AppData\Local\Android\Sdk"
+    if not defined SDK if exist "C:\Android\Sdk\platform-tools" set "SDK=C:\Android\Sdk"
+
+    if not defined SDK (
+        echo.
+        echo   [!] Android SDK nicht automatisch gefunden.
+        echo       Den Pfad findest du in Android Studio unter
+        echo       Settings ^> Languages ^& Frameworks ^> Android SDK ^("Android SDK Location"^).
+        echo.
+        set /p "SDK=   Bitte den SDK-Pfad hier einfuegen und Enter druecken: "
+    )
 
     if defined SDK (
         set "SDKFWD=!SDK:\=/!"
         > "local.properties" echo sdk.dir=!SDKFWD!
-        echo       Android SDK gefunden: !SDK!
-        echo       local.properties wurde automatisch angelegt.
+        echo       local.properties angelegt mit: !SDK!
     ) else (
-        echo.
-        echo   [!] Android SDK nicht automatisch gefunden.
-        echo       Lege die Datei local.properties in diesem Ordner an mit:
-        echo         sdk.dir=C:/Users/DEINNAME/AppData/Local/Android/Sdk
-        echo       Den genauen Pfad zeigt Android Studio unter
-        echo       Settings ^> Languages ^& Frameworks ^> Android SDK. Siehe INSTALL.md
-        echo.
+        echo   Kein Pfad angegeben - Abbruch. Siehe INSTALL.md
+        goto :fail
     )
 )
 

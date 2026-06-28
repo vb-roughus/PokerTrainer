@@ -43,15 +43,18 @@ Das Skript baut die App mit Gradle. Dafür wird benötigt:
   (Ohne Android Studio: Temurin/OpenJDK 17 von https://adoptium.net, bei der
   Installation „Set JAVA_HOME variable" anhaken.)
 - **Android SDK** – ebenfalls Teil von Android Studio. `install.bat` sucht es
-  automatisch (Umgebungsvariable `ANDROID_HOME`/`ANDROID_SDK_ROOT` oder der
-  Standardort `%LOCALAPPDATA%\Android\Sdk`) und legt bei Erfolg `local.properties`
-  selbst an. Wird es **nicht** gefunden, lege die Datei `local.properties` im
-  Projektordner von Hand an (Schrägstriche `/` verwenden):
+  automatisch (Umgebungsvariable `ANDROID_HOME`/`ANDROID_SDK_ROOT` oder die
+  üblichen Standardorte) und legt bei Erfolg `local.properties` selbst an.
+  Wird es **nicht** gefunden, **fragt das Skript nach dem Pfad** – einfach den
+  „Android SDK Location"-Pfad einfügen und Enter drücken.
+  Den genauen Pfad zeigt Android Studio unter
+  Settings → Languages & Frameworks → Android SDK. Du kannst die Datei
+  `local.properties` auch von Hand anlegen (Schrägstriche `/` verwenden):
   ```
   sdk.dir=C:/Users/DEINNAME/AppData/Local/Android/Sdk
   ```
-  Den genauen Pfad zeigt Android Studio unter
-  Settings → Languages & Frameworks → Android SDK.
+  Hinweis: `local.properties` ist rechnerspezifisch und wird **nicht** ins
+  Repo eingecheckt – auf jedem neuen PC also einmalig nötig.
 
 > Der erste Lauf lädt Gradle 8.9 herunter und kann einige Minuten dauern.
 > Danach geht es deutlich schneller.
