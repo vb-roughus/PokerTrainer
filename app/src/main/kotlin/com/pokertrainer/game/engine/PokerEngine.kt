@@ -230,6 +230,7 @@ class PokerEngine {
             isHandOver = true,
             isGameOver = matchOver,
             showdownCards = winningCards,
+            winnerId = winner.id,
             pot = 0
         )
     }

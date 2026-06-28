@@ -30,9 +30,11 @@ fun PlayerSeat(
     showCards: Boolean = false,
     modifier: Modifier = Modifier,
     highlightCards: List<Card> = emptyList(),
-    isDealer: Boolean = false
+    isDealer: Boolean = false,
+    isWinner: Boolean = false
 ) {
     val borderColor = when {
+        isWinner -> Color(0xFF4CAF50)
         player.hasFolded -> Color(0xFF616161)
         isActive -> Color(0xFFFFC107)
         else -> Color(0xFF424242)
@@ -54,10 +56,14 @@ fun PlayerSeat(
                 Spacer(modifier = Modifier.width(4.dp))
             }
             Text(
-                text = player.name,
+                text = if (isWinner) "🏆 ${player.name}" else player.name,
                 style = MaterialTheme.typography.labelLarge,
-                color = if (player.hasFolded) Color.Gray else Color.White,
-                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+                color = when {
+                    isWinner -> Color(0xFF81C784)
+                    player.hasFolded -> Color.Gray
+                    else -> Color.White
+                },
+                fontWeight = if (isActive || isWinner) FontWeight.Bold else FontWeight.Normal
             )
         }
         Text(
@@ -84,12 +90,7 @@ fun PlayerSeat(
         }
         if (player.currentBet > 0) {
             Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = "Einsatz: ${player.currentBet}",
-                fontSize = 10.sp,
-                color = Color(0xFF90CAF9),
-                fontWeight = FontWeight.Bold
-            )
+            BetChip(amount = player.currentBet, fromBelow = false)
         }
         player.lastAction?.let { action ->
             val label = when (action) {

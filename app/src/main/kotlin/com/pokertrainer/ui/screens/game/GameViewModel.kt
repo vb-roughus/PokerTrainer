@@ -40,11 +40,25 @@ class GameViewModel : ViewModel() {
     private val _hint = MutableStateFlow<HintState?>(null)
     val hint: StateFlow<HintState?> = _hint.asStateFlow()
 
+    /** Delay between automatic steps in ms (lower = faster). Adjustable via the speed slider. */
+    private val _stepDelayMs = MutableStateFlow(DEFAULT_STEP_DELAY_MS)
+    val stepDelayMs: StateFlow<Long> = _stepDelayMs.asStateFlow()
+
     private var stepJob: Job? = null
 
     fun selectDifficulty(difficulty: Difficulty) {
         _selectedDifficulty.value = difficulty
     }
+
+    /** [fraction] 0f = slowest, 1f = fastest. */
+    fun setSpeed(fraction: Float) {
+        val clamped = fraction.coerceIn(0f, 1f)
+        _stepDelayMs.value = (MAX_STEP_DELAY_MS - clamped * (MAX_STEP_DELAY_MS - MIN_STEP_DELAY_MS)).toLong()
+    }
+
+    /** Current slider position derived from the delay (0f = slowest, 1f = fastest). */
+    fun speedFraction(): Float =
+        ((MAX_STEP_DELAY_MS - _stepDelayMs.value).toFloat() / (MAX_STEP_DELAY_MS - MIN_STEP_DELAY_MS)).coerceIn(0f, 1f)
 
     fun startGame() {
         _hint.value = null
@@ -95,14 +109,16 @@ class GameViewModel : ViewModel() {
                 val current = _gameState.value ?: break
                 if (current.isHandOver) break
                 val next = engine.nextStep(current) ?: break
-                delay(STEP_DELAY_MS)
+                delay(_stepDelayMs.value)
                 _gameState.value = next
             }
         }
     }
 
     companion object {
-        private const val STEP_DELAY_MS = 750L
+        private const val DEFAULT_STEP_DELAY_MS = 750L
+        private const val MIN_STEP_DELAY_MS = 150L   // fastest
+        private const val MAX_STEP_DELAY_MS = 1500L  // slowest
     }
 
     fun requestHint() {
