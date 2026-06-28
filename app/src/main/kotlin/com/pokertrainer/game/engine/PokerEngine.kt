@@ -74,6 +74,8 @@ class PokerEngine {
             phase = BettingRound.PREFLOP,
             activePlayerIndex = if (firstToAct >= 0) firstToAct else dealerIndex,
             dealerIndex = dealerIndex,
+            smallBlindIndex = sbIndex,
+            bigBlindIndex = if (bbIndex != sbIndex) bbIndex else -1,
             difficulty = difficulty
         )
         // The ViewModel will step any AI actions that come before the human's turn.

@@ -31,6 +31,8 @@ fun PlayerSeat(
     modifier: Modifier = Modifier,
     highlightCards: List<Card> = emptyList(),
     isDealer: Boolean = false,
+    isSmallBlind: Boolean = false,
+    isBigBlind: Boolean = false,
     isWinner: Boolean = false
 ) {
     val borderColor = when {
@@ -51,8 +53,8 @@ fun PlayerSeat(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            if (isDealer) {
-                DealerBadge()
+            RoleBadges(isDealer = isDealer, isSmallBlind = isSmallBlind, isBigBlind = isBigBlind)
+            if (isDealer || isSmallBlind || isBigBlind) {
                 Spacer(modifier = Modifier.width(4.dp))
             }
             Text(
@@ -105,17 +107,27 @@ fun PlayerSeat(
     }
 }
 
-/** Small "D" chip marking the dealer button. */
+/** A small coloured position chip (e.g. "D", "SB", "BB"). */
 @Composable
-fun DealerBadge() {
+fun RoleBadge(text: String, background: Color, content: Color) {
     Text(
-        text = "D",
-        fontSize = 10.sp,
+        text = text,
+        fontSize = 9.sp,
         fontWeight = FontWeight.Bold,
-        color = Color.Black,
+        color = content,
         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         modifier = Modifier
-            .background(Color.White, RoundedCornerShape(50))
+            .background(background, RoundedCornerShape(50))
             .padding(horizontal = 5.dp, vertical = 1.dp)
     )
+}
+
+/** Renders the applicable position badges (Dealer / Small Blind / Big Blind). */
+@Composable
+fun RoleBadges(isDealer: Boolean, isSmallBlind: Boolean, isBigBlind: Boolean) {
+    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        if (isDealer) RoleBadge("D", Color.White, Color.Black)
+        if (isSmallBlind) RoleBadge("SB", Color(0xFF1565C0), Color.White)
+        if (isBigBlind) RoleBadge("BB", Color(0xFFFB8C00), Color.Black)
+    }
 }
