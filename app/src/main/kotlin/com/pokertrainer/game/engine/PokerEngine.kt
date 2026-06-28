@@ -76,15 +76,16 @@ class PokerEngine {
             dealerIndex = dealerIndex,
             difficulty = difficulty
         )
-        // If the first player to act is an AI, let it act right away.
-        return progressGame(started)
+        // The ViewModel will step any AI actions that come before the human's turn.
+        return started
     }
 
     fun humanAction(state: GameState, action: PlayerAction, raiseAmount: Int = 0): GameState {
         val human = state.players.indexOfFirst { it.isHuman }
         if (human < 0 || state.activePlayerIndex != human) return state
-        val updated = applyAction(state, human, action, raiseAmount)
-        return progressGame(updated)
+        // Only apply the human's action; the ViewModel drives the AI steps one by one
+        // (with delays) via nextStep() so the player can follow what happens.
+        return applyAction(state, human, action, raiseAmount)
     }
 
     private fun applyAction(state: GameState, playerIndex: Int, action: PlayerAction, raiseAmount: Int): GameState {
@@ -139,27 +140,23 @@ class PokerEngine {
         return state.copy(players = players, pot = pot, currentBet = currentBet, activePlayerIndex = nextActive)
     }
 
-    private fun progressGame(state: GameState): GameState {
-        // Check if only one player remains
-        val active = state.activePlayers
-        if (active.size == 1) {
-            return showdown(state)
-        }
+    /**
+     * Performs exactly ONE automatic progression and returns the resulting state:
+     * a single AI action, a phase advance (deal flop/turn/river), or the showdown.
+     * Returns null when it is the human's turn or the hand is already over – i.e.
+     * when nothing should happen without user input. The ViewModel calls this in a
+     * loop with a delay between calls so each step is visible.
+     */
+    fun nextStep(state: GameState): GameState? {
+        if (state.isHandOver) return null
+        if (state.activePlayers.size == 1) return showdown(state)
+        if (isBettingRoundComplete(state)) return advancePhase(state)
 
-        // Check if betting round is complete
-        if (isBettingRoundComplete(state)) {
-            return advancePhase(state)
-        }
+        val current = state.players.getOrNull(state.activePlayerIndex) ?: return null
+        if (current.isHuman || current.hasFolded || current.isAllIn) return null
 
-        // Let AI act if it's their turn
-        val currentPlayer = state.players.getOrNull(state.activePlayerIndex)
-        return if (currentPlayer != null && !currentPlayer.isHuman && !currentPlayer.hasFolded) {
-            val aiAction = getAIAction(state, state.activePlayerIndex)
-            val updated = applyAction(state, state.activePlayerIndex, aiAction.first, aiAction.second)
-            progressGame(updated)
-        } else {
-            state
-        }
+        val (action, amount) = getAIAction(state, state.activePlayerIndex)
+        return applyAction(state, state.activePlayerIndex, action, amount)
     }
 
     private fun isBettingRoundComplete(state: GameState): Boolean {
@@ -178,33 +175,21 @@ class PokerEngine {
         val firstToAct = firstActiveAfterDealer(resetPlayers, base.dealerIndex)
 
         return when (state.phase) {
-            BettingRound.PREFLOP -> {
-                val flop = deck.deal(3)
-                val next = base.copy(
-                    communityCards = flop,
-                    phase = BettingRound.FLOP,
-                    activePlayerIndex = firstToAct
-                )
-                progressGame(next)
-            }
-            BettingRound.FLOP -> {
-                val turn = deck.deal(1)
-                val next = base.copy(
-                    communityCards = base.communityCards + turn,
-                    phase = BettingRound.TURN,
-                    activePlayerIndex = firstToAct
-                )
-                progressGame(next)
-            }
-            BettingRound.TURN -> {
-                val river = deck.deal(1)
-                val next = base.copy(
-                    communityCards = base.communityCards + river,
-                    phase = BettingRound.RIVER,
-                    activePlayerIndex = firstToAct
-                )
-                progressGame(next)
-            }
+            BettingRound.PREFLOP -> base.copy(
+                communityCards = deck.deal(3),
+                phase = BettingRound.FLOP,
+                activePlayerIndex = firstToAct
+            )
+            BettingRound.FLOP -> base.copy(
+                communityCards = base.communityCards + deck.deal(1),
+                phase = BettingRound.TURN,
+                activePlayerIndex = firstToAct
+            )
+            BettingRound.TURN -> base.copy(
+                communityCards = base.communityCards + deck.deal(1),
+                phase = BettingRound.RIVER,
+                activePlayerIndex = firstToAct
+            )
             BettingRound.RIVER -> showdown(base)
             BettingRound.SHOWDOWN -> base
         }

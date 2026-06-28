@@ -1,6 +1,7 @@
 package com.pokertrainer.ui.screens.game
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.pokertrainer.data.model.Card
 import com.pokertrainer.data.model.Difficulty
 import com.pokertrainer.data.model.GameState
@@ -8,9 +9,12 @@ import com.pokertrainer.data.model.PlayerAction
 import com.pokertrainer.data.model.humanPlayer
 import com.pokertrainer.game.engine.HandEvaluator
 import com.pokertrainer.game.engine.PokerEngine
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 data class HintState(
@@ -36,6 +40,8 @@ class GameViewModel : ViewModel() {
     private val _hint = MutableStateFlow<HintState?>(null)
     val hint: StateFlow<HintState?> = _hint.asStateFlow()
 
+    private var stepJob: Job? = null
+
     fun selectDifficulty(difficulty: Difficulty) {
         _selectedDifficulty.value = difficulty
     }
@@ -44,12 +50,14 @@ class GameViewModel : ViewModel() {
         _hint.value = null
         _gameState.value = engine.newGame(_selectedDifficulty.value)
         _gameStarted.value = true
+        autoPlay()
     }
 
     fun humanAction(action: PlayerAction, raiseAmount: Int = 0) {
         val current = _gameState.value ?: return
         _hint.value = null
         _gameState.value = engine.humanAction(current, action, raiseAmount)
+        autoPlay()
     }
 
     /** Deal the next hand, keeping the current chip stacks. */
@@ -57,19 +65,44 @@ class GameViewModel : ViewModel() {
         val current = _gameState.value ?: return
         _hint.value = null
         _gameState.value = engine.nextHand(current)
+        autoPlay()
     }
 
     /** Restart a fresh match in the same difficulty (used after the match ends). */
     fun restartMatch() {
         _hint.value = null
         _gameState.value = engine.newGame(_selectedDifficulty.value)
+        autoPlay()
     }
 
     /** Back to the difficulty selection (top-bar reset). */
     fun newGame() {
+        stepJob?.cancel()
         _gameStarted.value = false
         _gameState.value = null
         _hint.value = null
+    }
+
+    /**
+     * Plays out the automatic steps (AI actions, dealing the flop/turn/river,
+     * showdown) one at a time with a short delay, so the player can follow what
+     * happens. Stops as soon as it is the human's turn or the hand is over.
+     */
+    private fun autoPlay() {
+        stepJob?.cancel()
+        stepJob = viewModelScope.launch {
+            while (true) {
+                val current = _gameState.value ?: break
+                if (current.isHandOver) break
+                val next = engine.nextStep(current) ?: break
+                delay(STEP_DELAY_MS)
+                _gameState.value = next
+            }
+        }
+    }
+
+    companion object {
+        private const val STEP_DELAY_MS = 750L
     }
 
     fun requestHint() {
