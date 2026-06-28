@@ -67,6 +67,9 @@
     <string name="game_new_game">Neues Spiel</string>
     <string name="game_next_hand">Nächste Hand</string>
     <string name="game_speed">Geschwindigkeit</string>
+    <string name="game_manual_mode">Manueller Modus</string>
+    <string name="game_manual_mode_hint">Jeden Schritt selbst bestätigen</string>
+    <string name="game_next_step">Weiter</string>
     <string name="game_match_lost">Du hast keine Chips mehr!</string>
     <string name="game_match_won">Du hast alle Chips gewonnen!</string>
     <string name="game_difficulty">Schwierigkeit</string>

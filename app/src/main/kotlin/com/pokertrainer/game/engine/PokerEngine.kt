@@ -159,6 +159,20 @@ class PokerEngine {
         return applyAction(state, state.activePlayerIndex, action, amount)
     }
 
+    /**
+     * Whether an automatic step is pending (an AI action, a phase advance or the
+     * showdown) – i.e. whether [nextStep] would do something. Pure: does NOT
+     * deal cards or mutate state. Used to decide between showing the betting
+     * controls (human's turn) and a "next step" prompt.
+     */
+    fun hasPendingStep(state: GameState): Boolean {
+        if (state.isHandOver) return false
+        if (state.activePlayers.size == 1) return true
+        if (isBettingRoundComplete(state)) return true
+        val current = state.players.getOrNull(state.activePlayerIndex) ?: return false
+        return !(current.isHuman || current.hasFolded || current.isAllIn)
+    }
+
     private fun isBettingRoundComplete(state: GameState): Boolean {
         val active = state.players.filter { !it.hasFolded && !it.isAllIn }
         if (active.isEmpty()) return true

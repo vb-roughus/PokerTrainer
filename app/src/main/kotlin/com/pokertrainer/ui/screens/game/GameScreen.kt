@@ -30,6 +30,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -75,6 +77,7 @@ fun GameScreen(
     val gameStarted by viewModel.gameStarted.collectAsState()
     val selectedDifficulty by viewModel.selectedDifficulty.collectAsState()
     val hint by viewModel.hint.collectAsState()
+    val manualMode by viewModel.manualMode.collectAsState()
 
     Scaffold(
         topBar = {
@@ -112,7 +115,9 @@ fun GameScreen(
                     onSelect = { viewModel.selectDifficulty(it) },
                     onStart = { viewModel.startGame() },
                     initialSpeed = viewModel.speedFraction(),
-                    onSpeedChange = { viewModel.setSpeed(it) }
+                    onSpeedChange = { viewModel.setSpeed(it) },
+                    manualMode = manualMode,
+                    onManualModeChange = { viewModel.setManualMode(it) }
                 )
             } else if (gameState != null) {
                 GameTable(
@@ -121,7 +126,10 @@ fun GameScreen(
                     onNextHand = { viewModel.nextHand() },
                     onRestart = { viewModel.restartMatch() },
                     onHintRequest = { viewModel.requestHint() },
-                    highlightCards = hint?.highlightCards ?: emptyList()
+                    highlightCards = hint?.highlightCards ?: emptyList(),
+                    manualMode = manualMode,
+                    stepPending = viewModel.hasPendingStep(gameState!!),
+                    onAdvanceStep = { viewModel.advanceStep() }
                 )
             }
 
@@ -204,7 +212,9 @@ private fun DifficultySelection(
     onSelect: (Difficulty) -> Unit,
     onStart: () -> Unit,
     initialSpeed: Float,
-    onSpeedChange: (Float) -> Unit
+    onSpeedChange: (Float) -> Unit,
+    manualMode: Boolean,
+    onManualModeChange: (Boolean) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -283,6 +293,36 @@ private fun DifficultySelection(
             Text("🐇", fontSize = 22.sp)
         }
 
+        Spacer(Modifier.height(16.dp))
+
+        // Manual mode: confirm every step with a button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.game_manual_mode),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(R.string.game_manual_mode_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color(0xFFBDBDBD)
+                )
+            }
+            Switch(
+                checked = manualMode,
+                onCheckedChange = onManualModeChange,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = Color.Black,
+                    checkedTrackColor = Color(0xFFFFC107)
+                )
+            )
+        }
+
         Spacer(Modifier.height(24.dp))
         Button(
             onClick = onStart,
@@ -308,7 +348,10 @@ private fun GameTable(
     onNextHand: () -> Unit,
     onRestart: () -> Unit,
     onHintRequest: () -> Unit,
-    highlightCards: List<com.pokertrainer.data.model.Card> = emptyList()
+    highlightCards: List<com.pokertrainer.data.model.Card> = emptyList(),
+    manualMode: Boolean = false,
+    stepPending: Boolean = false,
+    onAdvanceStep: () -> Unit = {}
 ) {
     val human = state.humanPlayer
     val isHumanTurn = state.players.getOrNull(state.activePlayerIndex)?.isHuman == true
@@ -426,7 +469,8 @@ private fun GameTable(
                             highlighted = card in humanHighlight
                         )
                     }
-                    if (isHumanTurn && !state.isHandOver) {
+                    val humanMustAct = !state.isHandOver && !stepPending && isHumanTurn
+                    if (humanMustAct) {
                         Spacer(Modifier.size(8.dp))
                         Button(
                             onClick = onHintRequest,
@@ -496,7 +540,7 @@ private fun GameTable(
                             }
                         }
                     }
-                    isHumanTurn -> {
+                    !state.isHandOver && !stepPending && isHumanTurn -> {
                         BettingControls(
                             state = state,
                             onAction = onAction,
@@ -504,6 +548,23 @@ private fun GameTable(
                                 .fillMaxWidth()
                                 .background(Color(0xDD000000), RoundedCornerShape(12.dp))
                         )
+                    }
+                    manualMode && stepPending -> {
+                        // Manual mode: wait for the player to confirm each step
+                        Button(
+                            onClick = onAdvanceStep,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreenDark)
+                        ) {
+                            Text(
+                                text = "▶  ${stringResource(R.string.game_next_step)}",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
                     }
                     else -> {
                         Box(

@@ -44,6 +44,10 @@ class GameViewModel : ViewModel() {
     private val _stepDelayMs = MutableStateFlow(DEFAULT_STEP_DELAY_MS)
     val stepDelayMs: StateFlow<Long> = _stepDelayMs.asStateFlow()
 
+    /** When on, each step waits for the player to tap "Weiter" instead of auto-advancing. */
+    private val _manualMode = MutableStateFlow(false)
+    val manualMode: StateFlow<Boolean> = _manualMode.asStateFlow()
+
     private var stepJob: Job? = null
 
     fun selectDifficulty(difficulty: Difficulty) {
@@ -59,6 +63,20 @@ class GameViewModel : ViewModel() {
     /** Current slider position derived from the delay (0f = slowest, 1f = fastest). */
     fun speedFraction(): Float =
         ((MAX_STEP_DELAY_MS - _stepDelayMs.value).toFloat() / (MAX_STEP_DELAY_MS - MIN_STEP_DELAY_MS)).coerceIn(0f, 1f)
+
+    fun setManualMode(enabled: Boolean) {
+        _manualMode.value = enabled
+        if (enabled) stepJob?.cancel() else autoPlay()  // resume automatic play if there are pending steps
+    }
+
+    /** Whether an automatic step is waiting (used by the UI to show the "Weiter" button). */
+    fun hasPendingStep(state: GameState): Boolean = engine.hasPendingStep(state)
+
+    /** Manual mode: apply exactly one step when the player taps "Weiter". */
+    fun advanceStep() {
+        val current = _gameState.value ?: return
+        _gameState.value = engine.nextStep(current) ?: return
+    }
 
     fun startGame() {
         _hint.value = null
@@ -104,6 +122,7 @@ class GameViewModel : ViewModel() {
      */
     private fun autoPlay() {
         stepJob?.cancel()
+        if (_manualMode.value) return  // steps are driven by the "Weiter" button
         stepJob = viewModelScope.launch {
             while (true) {
                 val current = _gameState.value ?: break
