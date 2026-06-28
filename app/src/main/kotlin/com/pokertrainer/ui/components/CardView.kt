@@ -1,5 +1,10 @@
 package com.pokertrainer.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -9,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -74,6 +80,30 @@ fun CardView(
                 )
             }
         }
+    }
+}
+
+/**
+ * A face-up card that animates in (fade + scale) the first time it appears.
+ * Re-animates whenever the card changes, giving a "dealing" effect. Pass
+ * [delayMillis] to stagger several cards (e.g. the three flop cards).
+ */
+@Composable
+fun AnimatedCard(
+    card: Card,
+    modifier: Modifier = Modifier,
+    size: CardSize = CardSize.MEDIUM,
+    highlighted: Boolean = false,
+    delayMillis: Int = 0
+) {
+    val visibleState = remember(card) { MutableTransitionState(false) }
+    visibleState.targetState = true
+    AnimatedVisibility(
+        visibleState = visibleState,
+        enter = fadeIn(animationSpec = tween(durationMillis = 300, delayMillis = delayMillis)) +
+            scaleIn(initialScale = 0.5f, animationSpec = tween(durationMillis = 300, delayMillis = delayMillis))
+    ) {
+        CardView(card = card, modifier = modifier, size = size, highlighted = highlighted)
     }
 }
 

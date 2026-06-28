@@ -1,5 +1,6 @@
 package com.pokertrainer.ui.screens.game
 
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -41,11 +42,11 @@ import com.pokertrainer.R
 import com.pokertrainer.data.model.BettingRound
 import com.pokertrainer.data.model.Difficulty
 import com.pokertrainer.data.model.GameState
-import com.pokertrainer.data.model.activePlayers
 import com.pokertrainer.data.model.humanPlayer
+import com.pokertrainer.ui.components.AnimatedCard
 import com.pokertrainer.ui.components.BettingControls
 import com.pokertrainer.ui.components.CardSize
-import com.pokertrainer.ui.components.CardView
+import com.pokertrainer.ui.components.DealerBadge
 import com.pokertrainer.ui.components.EmptyCardSlot
 import com.pokertrainer.ui.components.PlayerSeat
 import com.pokertrainer.ui.theme.PrimaryGreenDark
@@ -285,7 +286,8 @@ private fun GameTable(
                     isActive = state.players.getOrNull(state.activePlayerIndex)?.id == aiPlayer.id,
                     showCards = state.phase == BettingRound.SHOWDOWN,
                     modifier = Modifier.weight(1f).padding(4.dp),
-                    highlightCards = state.showdownCards
+                    highlightCards = state.showdownCards,
+                    isDealer = state.players.indexOfFirst { it.id == aiPlayer.id } == state.dealerIndex
                 )
             }
         }
@@ -319,10 +321,12 @@ private fun GameTable(
                 repeat(5) { idx ->
                     val card = state.communityCards.getOrNull(idx)
                     if (card != null) {
-                        CardView(
+                        AnimatedCard(
                             card = card,
                             size = CardSize.MEDIUM,
-                            highlighted = card in highlightCards || card in state.showdownCards
+                            highlighted = card in highlightCards || card in state.showdownCards,
+                            // Stagger the three flop cards; turn & river appear on their own
+                            delayMillis = if (idx < 3) idx * 130 else 0
                         )
                     } else {
                         EmptyCardSlot(size = CardSize.MEDIUM)
@@ -330,8 +334,9 @@ private fun GameTable(
                 }
             }
             Spacer(Modifier.height(8.dp))
+            val animatedPot by animateIntAsState(targetValue = state.pot, label = "pot")
             Text(
-                text = "💰 ${stringResource(R.string.game_pot)}: ${state.pot}",
+                text = "💰 ${stringResource(R.string.game_pot)}: $animatedPot",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
@@ -350,15 +355,31 @@ private fun GameTable(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "${human.name}  🪙 ${human.chips}",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
+                    val humanIsDealer = state.players.indexOfFirst { it.id == human.id } == state.dealerIndex
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier.padding(end = 16.dp)
-                    )
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (humanIsDealer) DealerBadge()
+                            Text(
+                                text = "${human.name}  🪙 ${human.chips}",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        if (human.currentBet > 0) {
+                            Text(
+                                text = "Einsatz: ${human.currentBet}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFF90CAF9),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                     human.hand.forEach { card ->
-                        CardView(
+                        AnimatedCard(
                             card = card,
                             size = CardSize.MEDIUM,
                             modifier = Modifier.padding(2.dp),

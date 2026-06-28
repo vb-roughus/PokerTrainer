@@ -29,7 +29,8 @@ fun PlayerSeat(
     isActive: Boolean,
     showCards: Boolean = false,
     modifier: Modifier = Modifier,
-    highlightCards: List<Card> = emptyList()
+    highlightCards: List<Card> = emptyList(),
+    isDealer: Boolean = false
 ) {
     val borderColor = when {
         player.hasFolded -> Color(0xFF616161)
@@ -47,12 +48,18 @@ fun PlayerSeat(
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = player.name,
-            style = MaterialTheme.typography.labelLarge,
-            color = if (player.hasFolded) Color.Gray else Color.White,
-            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (isDealer) {
+                DealerBadge()
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+            Text(
+                text = player.name,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (player.hasFolded) Color.Gray else Color.White,
+                fontWeight = if (isActive) FontWeight.Bold else FontWeight.Normal
+            )
+        }
         Text(
             text = "🪙 ${player.chips}",
             fontSize = 12.sp,
@@ -77,7 +84,12 @@ fun PlayerSeat(
         }
         if (player.currentBet > 0) {
             Spacer(modifier = Modifier.height(2.dp))
-            Text(text = "Bet: ${player.currentBet}", fontSize = 10.sp, color = Color(0xFF90CAF9))
+            Text(
+                text = "Einsatz: ${player.currentBet}",
+                fontSize = 10.sp,
+                color = Color(0xFF90CAF9),
+                fontWeight = FontWeight.Bold
+            )
         }
         player.lastAction?.let { action ->
             val label = when (action) {
@@ -90,4 +102,19 @@ fun PlayerSeat(
             Text(text = label, fontSize = 10.sp, color = Color(0xFF80CBC4), fontWeight = FontWeight.Bold)
         }
     }
+}
+
+/** Small "D" chip marking the dealer button. */
+@Composable
+fun DealerBadge() {
+    Text(
+        text = "D",
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        color = Color.Black,
+        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        modifier = Modifier
+            .background(Color.White, RoundedCornerShape(50))
+            .padding(horizontal = 5.dp, vertical = 1.dp)
+    )
 }
