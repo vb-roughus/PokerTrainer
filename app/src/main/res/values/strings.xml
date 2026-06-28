@@ -67,6 +67,9 @@
     <string name="game_new_game">New Game</string>
     <string name="game_next_hand">Next Hand</string>
     <string name="game_speed">Speed</string>
+    <string name="game_manual_mode">Manual mode</string>
+    <string name="game_manual_mode_hint">Confirm every step yourself</string>
+    <string name="game_next_step">Next step</string>
     <string name="game_match_lost">You are out of chips!</string>
     <string name="game_match_won">You won all the chips!</string>
     <string name="game_difficulty">Difficulty</string>
